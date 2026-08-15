@@ -1,5 +1,7 @@
 # dsh-anchored-standard-windows
 
+English | [中文](README.zh-CN.md)
+
 > **Progressive-Disclosure Agent Preset for Windows DeepSeek Harness — Zero initial tool bloat, full Standard power on demand.**
 
 `dsh-anchored-standard-windows` is a modular User Agent preset designed for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) on Windows. It eliminates initial context pollution by introducing a multi-tier progressive tool loading mechanism—combining the lightweight speed of `Minimal` with the rich capabilities of `Standard`.

@@ -1,44 +1,52 @@
 # dsh-anchored-standard-windows
 
-这是 Windows 版 DeepSeek Harness 的社区 Agent 预设包。它是**预设包**，不是
-Cordis 运行时插件：没有 `dsh.bundle` 声明，因此不会作为第二个运行时插件出现在
-DSH 的插件库存中。
+[English](README.md) | 中文
 
-请配合
-[`dsh-subprocess-win32`](https://github.com/delightedMaster/dsh-subprocess-win32)
-使用，由后者提供 Windows 的 `subprocess-win32` 运行时以及 Git Bash/编辑器工具面。
+> **Windows DeepSeek Harness 渐进式按需加载 Agent 预设 —— 首轮零上下文污染，按需解锁全量能力。**
 
-## 与 `dsh-subprocess-win32` 的关系
+`dsh-anchored-standard-windows` 是专为 Windows 平台下的 [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness) 打造的模块化 Agent 预设包。它通过创新的“三阶段渐进式工具加载”机制，完美兼顾了 Minimal 预设的极速省 Token 优势与 Standard 预设的强大工具生态。
 
-两个仓库刻意处在不同层：
+---
 
-| 仓库 | 层级 | 负责内容 | 安装影响 |
-| --- | --- | --- | --- |
-| [`dsh-subprocess-win32`](https://github.com/delightedMaster/dsh-subprocess-win32) | DSH Cordis 运行时插件 | `subprocess-win32` 插件库存项、Windows 进程适配器、生命周期管理器，以及两个 Windows 预设的受管理副本 | Windows 上应先安装；管理器也负责预设的安装、更新、回退和删除 |
-| 本仓库 `dsh-anchored-standard-windows` | 用户 Agent 预设包 | `agent.cordis.yml`、阶段控制模块和预设测试 | 使用管理式 bundle 时可不单独安装；只有独立分发或测试 Anchored 时才需要 |
+## 核心设计与渐进式方案
 
-运行时插件并不要求 Anchored Standard，可以和 Minimal、官方 Standard 或任何自定义预设一起使用。
-预设包不能替代运行时插件，也不应该在 DSH 插件库存中显示为第二行。使用前一个仓库的生命周期
-管理器时，两套源码作为同一个受管理安装处理，后续更新或完整卸载都能同时登记和清理。
+- **官方 Standard 预设的痛点**：第一轮请求就全量注入庞大的工具定义、Skill 目录和系统上下文，消耗大量 Token 预算，增加模型幻觉概率并拖慢首轮响应。
+- **官方 Minimal 预设的痛点**：虽然清爽极速，但在面对复杂场景时无法调用 PowerShell、联网工具、子智能体或特定专业 Skill。
+- **Anchored Standard 的解决方案**：**渐进式暴露（Progressive Disclosure）**。模型以极简模式快速启动，在后续交互中通过检索按需加载具体工具与技能，将上下文占用降至最低。
 
-## 解决什么问题
+---
 
-官方 Standard 首轮就会暴露较大的工具目录，并自动注入 Skill 和工作区上下文。这
-有利于功能完整，但会在任务开始前改变模型可见上下文。本预设保留 Standard 能力，
-同时把常驻表面压到较小范围：
+## 运行机制：三阶段渐进式架构
 
-1. **首轮启动：**严格只有 `bash` 和 `str_replace_editor`，不注入 Skill 目录，也
-   不注入完整 AGENTS/CLAUDE 指令摘要。
-2. **提升后的常驻工具：**两个启动工具，加上 `dev_tool_search`、`skill_search`、
-   `skill_load`。
-3. **按需解锁：**PowerShell、网页、工作流、子代理、计划等 Standard 工具只有
-   在显式执行 `dev_tool_search` 后才进入 schema。
+```
+[ 第一阶段：极简启动 ] ──────────► [ 第二阶段：常驻检索核心 ] ───────► [ 第三阶段：按需动态加载 ]
+  • bash                            • bash, str_replace_editor          • PowerShell (pwsh)
+  • str_replace_editor              • dev_tool_search                   • 联网与检索工具
+  (零 Skill 目录注入，极省 Token)    • skill_search / skill_load         • 子智能体与工作流工具
+                                                                        • 具体的 SKILL.md 文档
+```
 
-压缩后会回到受控的小工具集合，产生新的有效提升事件后才恢复已解锁能力；持久化
-事件保证恢复会话后不会无故丢失解锁状态。
+1. **第一阶段：极简启动（Bootstrap）**  
+   仅暴露 `bash` 与 `str_replace_editor` 两个基础工具。不自动注入全量 Skill 目录和冗长规则摘要，实现超低延迟首轮响应。
+2. **第二阶段：常驻检索核心（Resident Core）**  
+   升级为常驻工具集，增加轻量级检索能力：`dev_tool_search`、`skill_search` 与 `skill_load`。
+3. **第三阶段：按需动态加载（On-Demand Promotion）**  
+   当任务需要使用特定能力（如 `pwsh`、网页访问、子 Agent 或特定 Skill）时，通过检索工具按需载入对应的 Schema，绝不提前占用上下文。
+4. **上下文压缩与恢复保障（Compaction & Resume）**  
+   发生上下文压缩（Compaction）后，会优雅重置回常驻精简集，防止上下文永久膨胀；同时通过持久化事件确保已解锁工具在会话恢复后依然可用。
 
-这是针对特定工作负载的折中方案，不声称 Windows 变成 Linux，也不保证所有任务与
-Minimal 的延迟或完成率相同。
+---
+
+## 与 `dsh-subprocess-win32` 的关系说明
+
+本仓库是 **Agent 预设包**，而非 Cordis 运行时插件：
+
+| 仓库 | DSH 角色 | 包含内容 | 安装指南 |
+| :--- | :--- | :--- | :--- |
+| [`dsh-subprocess-win32`](https://github.com/delightedMaster/dsh-subprocess-win32) | **Cordis 运行时插件** | `subprocess-win32` 运行时、进程适配器以及两套预设的安装管理器 | **Windows 上应先安装。** 其管理器会自动配置、安装并更新预设。 |
+| **`dsh-anchored-standard-windows`** *(当前仓库)* | **Agent 预设包** | `agent.cordis.yml`、阶段门禁模块以及独立的预设单元测试 | **可选。** 仅在需要独立检查、二次开发或测试 Anchored 预设时使用。 |
+
+---
 
 ## 安装
 
