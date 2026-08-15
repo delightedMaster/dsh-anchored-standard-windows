@@ -1,49 +1,50 @@
 # dsh-anchored-standard-windows
 
-Community Agent preset for Windows DeepSeek Harness. This repository is a
-**preset package**, not a Cordis runtime plugin: it has no `dsh.bundle` entry and
-will not appear as a second item in DSH's runtime-plugin inventory.
+> **Progressive-Disclosure Agent Preset for Windows DeepSeek Harness — Zero initial tool bloat, full Standard power on demand.**
 
-Use it together with
-[`dsh-subprocess-win32`](https://github.com/delightedMaster/dsh-subprocess-win32),
-which supplies the Windows `subprocess-win32` runtime and the Git Bash/editor
-surface used by the preset.
+`dsh-anchored-standard-windows` is a modular User Agent preset designed for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) on Windows. It eliminates initial context pollution by introducing a multi-tier progressive tool loading mechanism—combining the lightweight speed of `Minimal` with the rich capabilities of `Standard`.
+
+---
+
+## Highlights & The Progressive Solution
+
+- **The Problem with Stock Standard**: The official Standard preset injects full tool schemas, skill registries, and system prompt digests starting from Turn 1. This burns substantial context tokens, introduces latency, and increases model hallucination risk on simple tasks.
+- **The Problem with Stock Minimal**: Minimal is fast and clean, but cannot access advanced tools (PowerShell, workflow automation, web fetchers, subagents, or domain skills) when tasks scale in complexity.
+- **The Anchored Solution**: Progressive Disclosure. Your model starts lean and fast, discovers tools dynamically via bounded search, and pulls heavy capabilities into context only when needed.
+
+---
+
+## How It Works: 3-Tier Progressive Architecture
+
+```
+[ Turn 1: Bootstrap ] ──────────► [ Turn 2+: Resident Core ] ───────► [ On Demand: Dynamic Unlock ]
+  • bash                            • bash, str_replace_editor          • PowerShell (pwsh)
+  • str_replace_editor              • dev_tool_search                   • Web & Network Tools
+  (Zero skill catalog bloat)        • skill_search / skill_load         • Subagents & Workflows
+                                                                        • Specific SKILL.md specs
+```
+
+1. **Bootstrap Phase (Turn 1)**  
+   Only `bash` and `str_replace_editor` are exposed. No automatic skill catalogs and no bulky instruction dumps. Immediate response with minimal token consumption.
+2. **Resident Discovery Core (Turn 2+)**  
+   Promotes the active set to include lightweight discovery tools: `dev_tool_search`, `skill_search`, and `skill_load`.
+3. **On-Demand Dynamic Promotion**  
+   When the agent determines it needs specialized tools (e.g. `pwsh`, web tools, or specific domain skills), it queries `dev_tool_search` or `skill_load`. Only the requested schemas are injected into the active scope.
+4. **Compaction & Resume Resilient**  
+   After session compaction, the context cleanly resets to the lean resident set to prevent permanent bloat, while durable session events preserve unlocked tools across resumes.
+
+---
 
 ## Relationship with `dsh-subprocess-win32`
 
-These repositories deliberately have different layers:
+This repository is a **preset specification package**, not a Cordis runtime plugin:
 
-| Repository | Layer | Owns | Installation consequence |
-| --- | --- | --- | --- |
-| [`dsh-subprocess-win32`](https://github.com/delightedMaster/dsh-subprocess-win32) | DSH Cordis runtime plugin | The `subprocess-win32` inventory entry, Windows process adapter, lifecycle manager, and managed copies of both Windows presets | Install this first on Windows; its manager also installs, updates, rolls back, and removes the presets |
-| `dsh-anchored-standard-windows` (this repository) | User Agent preset package | `agent.cordis.yml`, the phase-gating modules, and preset tests | Optional when the managed bundle is used; required only when distributing or testing Anchored independently |
+| Repository | Role in DSH | What It Provides | Installation Guide |
+| :--- | :--- | :--- | :--- |
+| [`dsh-subprocess-win32`](https://github.com/delightedMaster/dsh-subprocess-win32) | **Cordis Runtime Plugin** | `subprocess-win32` runtime, process adapter, and lifecycle installer for both presets | **Install this first on Windows.** Its manager configures, installs, and updates presets automatically. |
+| **`dsh-anchored-standard-windows`** *(This repo)* | **Agent Preset Package** | `agent.cordis.yml`, phase-gating modules, and preset unit tests | **Optional.** Needed only when inspecting, customizing, or testing Anchored independently. |
 
-The runtime plugin does not require Anchored Standard: Minimal, official Standard,
-or no custom preset can be used with it. The preset package cannot replace the
-runtime plugin, and it is not expected to appear as a second row in DSH's plugin
-inventory. When the first repository's lifecycle manager is used, the two source
-trees are kept as one managed installation so a later update or complete uninstall
-can account for both.
-
-## Why this preset exists
-
-The official Standard preset exposes a large tool catalog and automatic Skill and
-workspace-context injections from the first request. That is useful for breadth,
-but it changes the model-visible context before a task starts. This preset keeps a
-small, Minimal-aligned first request while retaining a path to Standard tools:
-
-1. **Bootstrap:** exactly `bash` and `str_replace_editor`; no automatic Skill
-   catalog and no full AGENTS/CLAUDE instruction digest.
-2. **Promoted resident set:** the two bootstrap tools plus
-   `dev_tool_search`, `skill_search`, and `skill_load`.
-3. **On demand:** PowerShell, web, workflow, subagent, planning, and other
-   Standard tools appear only after an explicit `dev_tool_search` unlock.
-
-After compaction the session returns to the controlled small set and requires a
-new promotion signal. Durable events keep unlocked tools available after resume.
-
-This is a workload-oriented compromise, not a claim that Windows is Linux or that
-every task will match Minimal's latency or completion rate.
+---
 
 ## Installation
 
