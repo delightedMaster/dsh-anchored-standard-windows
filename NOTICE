@@ -1,0 +1,15 @@
+dsh-anchored-standard-windows is an independent community Windows adaptation.
+
+The preset is derived from dsh-anchored-standard:
+  https://github.com/xiaobright/dsh-anchored-standard
+  commit f57a1bde2dbaba3039bdae8631f78a0cb3ae3ebe
+
+The companion Windows runtime direction is derived from dsh-win32 0.3.0:
+  https://github.com/sjh9714/dsh-win32
+  commit f8a68a9836b84fdfec5c1f36ab60cea9923c689f
+
+The composition adapts the DeepSeek Harness 0.1.0-rc.6 preset and Cordis APIs:
+  https://github.com/deepseek-ai/deepseek-harness
+
+The referenced projects are distributed under the MIT License. This preset is
+not affiliated with or endorsed by DeepSeek, OpenAI, or the upstream maintainers.

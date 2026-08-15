@@ -1,0 +1,12 @@
+node_modules/
+.pnpm-store/
+npm-debug.log*
+*.log
+*.tmp
+*.bak
+.env
+.env.*
+.dsh/
+.codex/
+coverage/
+dist/

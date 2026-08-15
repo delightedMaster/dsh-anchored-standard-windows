@@ -1,0 +1,3 @@
+name: Anchored Standard (Windows)
+description: 首轮仅持久 Git Bash 与编辑器；随后常驻三个渐进发现工具，其余 Standard 能力按需解锁。
+order: 5

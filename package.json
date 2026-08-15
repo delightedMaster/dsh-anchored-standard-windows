@@ -1,0 +1,23 @@
+{
+  "name": "dsh-anchored-standard-windows",
+  "version": "0.1.0",
+  "description": "Windows community Agent preset for DeepSeek Harness with Minimal-aligned bootstrap and on-demand Standard tools",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/delightedMaster/dsh-anchored-standard-windows.git"
+  },
+  "homepage": "https://github.com/delightedMaster/dsh-anchored-standard-windows",
+  "bugs": {
+    "url": "https://github.com/delightedMaster/dsh-anchored-standard-windows/issues"
+  },
+  "author": "delightedMaster",
+  "engines": { "node": ">=22.19.0" },
+  "scripts": {
+    "test": "node --test test/compaction-epoch.test.mjs test/custom-bash.test.mjs test/dev-tool-search.test.mjs test/instruction-hint.test.mjs test/skill-search.test.mjs test/tool-bootstrap.test.mjs"
+  },
+  "peerDependencies": {
+    "dsh-subprocess-win32": "^0.3.0"
+  }
+}
